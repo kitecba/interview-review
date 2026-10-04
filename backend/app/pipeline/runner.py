@@ -238,15 +238,23 @@ class PipelineRunner:
 
             row.status = StageStatus.RUNNING
             row.input_hash = input_hash
+            # attempt 是**跨多次执行累计**的，用于展示"这个阶段一共跑过几次"。
+            # 注意它不能用来控制下面的重试循环 —— 那曾经导致一个真实的 bug，
+            # 详见循环处的注释。
             row.attempt += 1
             row.error = None
             row.started_at = _now()
             session.add(row)
             session.commit()
-            attempt = row.attempt
 
         last_error: Exception | None = None
-        for try_index in range(attempt, _MAX_ATTEMPTS + 1):
+        # 从 1 开始，与累计的 attempt 无关。
+        #
+        # 这里踩过一次坑：原来写的是 range(attempt, _MAX_ATTEMPTS + 1)，
+        # 而 attempt 会跨执行累加。同一个阶段第 4 次重跑时 range(4, 4) 是空的，
+        # 循环体一次都不执行，last_error 保持 None，最后抛出那句毫无信息量的
+        # 「阶段执行失败」。表现为：一个阶段重跑超过 3 次就再也跑不起来。
+        for try_index in range(1, _MAX_ATTEMPTS + 1):
             try:
                 ctx.emit(f"{STAGE_LABELS.get(stage.name, stage.name)}…", base_progress)
                 output = await stage.execute(ctx)
@@ -283,7 +291,7 @@ class PipelineRunner:
                 if not retryable or try_index >= _MAX_ATTEMPTS:
                     raise _as_stage_error(exc) from exc
 
-                delay = _RETRY_BACKOFF[min(try_index - attempt, len(_RETRY_BACKOFF) - 1)]
+                delay = _RETRY_BACKOFF[min(try_index - 1, len(_RETRY_BACKOFF) - 1)]
                 logger.warning(
                     "阶段 %s 失败（第 %d 次），%d 秒后重试：%s",
                     stage.name, try_index, delay, exc,
