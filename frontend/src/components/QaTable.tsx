@@ -40,7 +40,7 @@ export function QaTable({ items }: QaTableProps) {
 
   if (items.length === 0) {
     return (
-      <p className="rounded-md border border-dashed border-neutral-300 bg-white px-4 py-8 text-center text-sm text-neutral-500">
+      <p className="border border-dashed border-rule-strong bg-paper-raised px-4 py-8 text-center text-sm text-ink-faint">
         暂无逐题明细。
       </p>
     )
@@ -49,17 +49,17 @@ export function QaTable({ items }: QaTableProps) {
   const colSpan = 3 + dimensionKeys.length
 
   return (
-    <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
+    <div className="panel overflow-hidden">
       <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="border-b border-neutral-200 bg-neutral-50/80 text-xs text-neutral-500">
-            <th className="w-16 px-4 py-2.5 text-left font-medium">题号</th>
-            <th className="px-3 py-2.5 text-left font-medium">主题</th>
-            <th className="w-20 px-3 py-2.5 text-right font-medium">总分</th>
+          <tr className="border-b border-rule bg-paper-sunken/50">
+            <th className="label-cap w-16 px-4 py-2.5 text-left font-medium">题号</th>
+            <th className="label-cap px-3 py-2.5 text-left font-medium">主题</th>
+            <th className="label-cap w-20 px-3 py-2.5 text-right font-medium">总分</th>
             {dimensionKeys.map((key) => (
               <th
                 key={key}
-                className="w-24 px-3 py-2.5 text-right font-medium"
+                className="label-cap w-24 px-3 py-2.5 text-right font-medium"
                 title={key}
               >
                 {key}
@@ -67,21 +67,21 @@ export function QaTable({ items }: QaTableProps) {
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-neutral-100">
+        <tbody className="divide-y divide-rule">
           {items.map((qa) => {
             const isOpen = expanded.has(qa.seq)
             return (
               <Fragment key={qa.seq}>
                 <tr
                   onClick={() => toggle(qa.seq)}
-                  className="cursor-pointer transition-colors hover:bg-neutral-50"
+                  className="cursor-pointer transition-colors hover:bg-paper-sunken"
                 >
-                  <td className="px-4 py-2.5 whitespace-nowrap text-neutral-500 tabular-nums">
+                  <td className="mono tnum px-4 py-2.5 whitespace-nowrap text-ink-faint">
                     <span className="flex items-center gap-1">
                       <svg
                         viewBox="0 0 20 20"
                         fill="currentColor"
-                        className={`size-3 shrink-0 text-neutral-400 transition-transform ${isOpen ? 'rotate-90' : ''}`}
+                        className={`size-3 shrink-0 text-ink-faint transition-transform ${isOpen ? 'rotate-90' : ''}`}
                       >
                         <path d="M7 5l6 5-6 5V5z" />
                       </svg>
@@ -90,20 +90,20 @@ export function QaTable({ items }: QaTableProps) {
                   </td>
                   <td className="px-3 py-2.5">
                     <span className="flex min-w-0 items-center gap-2">
-                      <span className="truncate text-neutral-800">
+                      <span className="truncate text-ink">
                         {qa.topic || '未命名主题'}
                       </span>
                       {qa.is_followup && <Badge tone="violet">追问</Badge>}
                       {qa.is_off_topic && <Badge tone="amber">偏题</Badge>}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 text-right font-semibold text-neutral-800 tabular-nums">
+                  <td className="display tnum px-3 py-2.5 text-right font-semibold text-ink">
                     {formatScore(qa.analysis?.overall_score ?? null)}
                   </td>
                   {dimensionKeys.map((key) => (
                     <td
                       key={key}
-                      className="px-3 py-2.5 text-right text-neutral-600 tabular-nums"
+                      className="tnum px-3 py-2.5 text-right text-ink-soft"
                     >
                       {qa.analysis?.dimension_scores?.[key] != null
                         ? formatScore(qa.analysis.dimension_scores[key])
@@ -112,7 +112,7 @@ export function QaTable({ items }: QaTableProps) {
                   ))}
                 </tr>
                 {isOpen && (
-                  <tr className="bg-neutral-50/60">
+                  <tr className="bg-paper-sunken/40">
                     <td colSpan={colSpan} className="px-4 py-4">
                       <QaDetail qa={qa} />
                     </td>
@@ -137,14 +137,14 @@ function QaDetail({ qa }: { qa: QAItem }) {
       </div>
 
       {!analysis ? (
-        <p className="text-sm text-neutral-500">该题尚未生成分析。</p>
+        <p className="text-sm text-ink-faint">该题尚未生成分析。</p>
       ) : (
         <>
           <div>
             <SectionLabel>维度得分</SectionLabel>
             <div className="mt-2 grid grid-cols-2 gap-x-8 gap-y-2">
               {Object.entries(analysis.dimension_scores ?? {}).map(
-                ([name, value]) => {
+                ([name, value], index) => {
                   const scale = dimensionScale(value)
                   const pct = Math.max(0, Math.min(100, (value / scale) * 100))
                   return (
@@ -153,18 +153,21 @@ function QaDetail({ qa }: { qa: QAItem }) {
                       className="grid grid-cols-[104px_minmax(0,1fr)_40px] items-center gap-2"
                     >
                       <span
-                        className="truncate text-xs text-neutral-600"
+                        className="truncate text-xs text-ink-soft"
                         title={name}
                       >
                         {name}
                       </span>
-                      <span className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200">
+                      <span className="h-1.5 w-full overflow-hidden bg-paper-sunken">
                         <span
-                          className="block h-full rounded-full bg-neutral-700"
-                          style={{ width: `${pct}%` }}
+                          className="bar-grow block h-full bg-ink-soft"
+                          style={{
+                            width: `${pct}%`,
+                            animationDelay: `${index * 40}ms`,
+                          }}
                         />
                       </span>
-                      <span className="text-right text-xs font-medium text-neutral-700 tabular-nums">
+                      <span className="display tnum text-right text-xs leading-none text-ink">
                         {formatScore(value)}
                       </span>
                     </div>
@@ -177,7 +180,7 @@ function QaDetail({ qa }: { qa: QAItem }) {
           {analysis.summary && (
             <div>
               <SectionLabel>总评</SectionLabel>
-              <p className="mt-1.5 text-sm leading-relaxed text-neutral-700">
+              <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
                 {analysis.summary}
               </p>
             </div>
@@ -209,13 +212,13 @@ function QaDetail({ qa }: { qa: QAItem }) {
                 {analysis.knowledge_points.map((kp, i) => (
                   <li
                     key={i}
-                    className="rounded-md border border-neutral-200 bg-white px-3 py-2"
+                    className="border border-rule bg-paper-raised px-3 py-2"
                   >
-                    <p className="text-sm font-medium text-neutral-800">
+                    <p className="text-sm font-medium text-ink">
                       {kp.title}
                     </p>
                     {kp.detail && (
-                      <p className="mt-0.5 text-xs leading-relaxed text-neutral-500">
+                      <p className="mt-0.5 text-xs leading-relaxed text-ink-faint">
                         {kp.detail}
                       </p>
                     )}
@@ -232,7 +235,7 @@ function QaDetail({ qa }: { qa: QAItem }) {
                 {analysis.predicted_followups.map((f, i) => (
                   <li
                     key={i}
-                    className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-600"
+                    className="rounded-sm border border-rule bg-paper-raised px-3 py-1 text-xs text-ink-soft"
                   >
                     {f}
                   </li>
@@ -247,11 +250,7 @@ function QaDetail({ qa }: { qa: QAItem }) {
 }
 
 function SectionLabel({ children }: { children: ReactNode }) {
-  return (
-    <p className="text-[11px] font-medium tracking-wide text-neutral-400">
-      {children}
-    </p>
-  )
+  return <p className="label-cap">{children}</p>
 }
 
 function SpeechBlock({
@@ -268,7 +267,7 @@ function SpeechBlock({
       <div className="mb-1.5">
         <Badge tone={tone}>{role}</Badge>
       </div>
-      <p className="text-sm leading-relaxed whitespace-pre-wrap text-neutral-700">
+      <p className="text-sm leading-relaxed whitespace-pre-wrap text-ink-soft">
         {text || '（空）'}
       </p>
     </div>
@@ -287,10 +286,10 @@ function BulletBlock({
   if (!items || items.length === 0) return null
   const dot =
     tone === 'green'
-      ? 'bg-emerald-500'
+      ? 'bg-ok'
       : tone === 'red'
-        ? 'bg-red-500'
-        : 'bg-blue-500'
+        ? 'bg-bad'
+        : 'bg-ink-faint'
   return (
     <div>
       <SectionLabel>{title}</SectionLabel>
@@ -298,7 +297,7 @@ function BulletBlock({
         {items.map((item, i) => (
           <li
             key={i}
-            className="flex gap-2 text-sm leading-relaxed text-neutral-700"
+            className="flex gap-2 text-sm leading-relaxed text-ink-soft"
           >
             <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${dot}`} />
             <span>{item}</span>

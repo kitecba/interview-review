@@ -104,17 +104,15 @@ export function confidenceTone(confidence: string): Tone {
 
 /** 根据 0-100 的分数返回文字颜色（用于大号总分）。 */
 export function scoreTextColor(score: number | null | undefined): string {
-  if (score == null) return 'text-neutral-400'
-  if (score >= 85) return 'text-emerald-600'
-  if (score >= 70) return 'text-blue-600'
-  if (score >= 55) return 'text-amber-600'
-  return 'text-red-600'
+  if (score == null) return 'text-ink-faint'
+  if (score >= 70) return 'text-ok'
+  if (score >= 55) return 'text-warn'
+  return 'text-bad'
 }
 
 /** 根据 0-100 的分数返回条形填充色。 */
 export function scoreBarColor(score: number): string {
-  if (score >= 85) return 'bg-emerald-500'
-  if (score >= 70) return 'bg-blue-500'
-  if (score >= 55) return 'bg-amber-500'
-  return 'bg-red-500'
+  if (score >= 70) return 'bg-ok'
+  if (score >= 55) return 'bg-warn'
+  return 'bg-bad'
 }

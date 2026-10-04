@@ -7,12 +7,12 @@ import { ReportPage } from './pages/ReportPage'
 
 function NotFoundPage() {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-neutral-200 bg-white py-24 text-center">
-      <p className="text-4xl font-semibold text-neutral-300">404</p>
-      <p className="mt-3 text-sm font-medium text-neutral-700">页面不存在</p>
+    <div className="panel flex flex-col items-center justify-center py-24 text-center">
+      <p className="display text-5xl text-ink-faint tnum">404</p>
+      <p className="mt-3 text-sm font-medium text-ink-soft">页面不存在</p>
       <Link
         to="/"
-        className="mt-4 rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
+        className="mt-4 rounded-sm bg-ink px-3 py-1.5 text-sm font-medium text-paper-raised hover:bg-ink-soft"
       >
         返回面试列表
       </Link>

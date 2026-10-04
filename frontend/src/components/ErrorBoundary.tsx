@@ -29,25 +29,25 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.error) {
       return (
         <div className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-6 text-center">
-          <h1 className="text-lg font-semibold text-neutral-900">页面出错了</h1>
-          <p className="mt-2 text-sm text-neutral-500">
+          <h1 className="text-lg font-semibold text-ink">页面出错了</h1>
+          <p className="mt-2 text-sm text-ink-soft">
             渲染过程中发生异常，可以尝试重新加载。
           </p>
-          <pre className="mt-4 max-h-48 w-full overflow-auto rounded-md bg-neutral-100 p-3 text-left text-xs text-neutral-600">
+          <pre className="mt-4 max-h-48 w-full overflow-auto bg-paper-sunken p-3 text-left text-xs text-ink-soft">
             {this.state.error.message}
           </pre>
           <div className="mt-5 flex gap-3">
             <button
               type="button"
               onClick={this.handleReset}
-              className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+              className="rounded-sm border border-rule-strong bg-paper-raised px-3 py-1.5 text-sm font-medium text-ink-soft hover:bg-paper-sunken"
             >
               重试渲染
             </button>
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-800"
+              className="rounded-sm bg-ink px-3 py-1.5 text-sm font-medium text-paper-raised hover:bg-ink-soft"
             >
               重新加载
             </button>

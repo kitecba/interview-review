@@ -1,46 +1,187 @@
 @import "tailwindcss";
 
-:root {
-  color-scheme: light;
+/* ============================================================================
+   设计方向：案卷（dossier）
+   ----------------------------------------------------------------------------
+   这个产物本质上是一份卷宗 —— 一段被记录下来的对话、逐句标注、最后给出结论。
+   所以不按 dashboard 做，按文档做：
+
+   - 纸与墨的配色。不用纯白，用偏暖的纸色；不用纯黑，用暖调近黑。
+   - 细分隔线代替卡片阴影。文档没有投影。
+   - 衬线做展示（大分数、标题），等宽做数据（时间戳、编号、代号）。
+     这两个字体只作用在拉丁字母和数字上 —— 中文由系统字体兜底，
+     这样才不用为了字体下载几 MB 的中文字库。
+   - 唯一的强调色是朱印红，只用在真正需要被看到的地方。
+
+   字体自托管（@fontsource），不走 CDN：Google Fonts 在国内不通，
+   引了加载不到反而会让排版退化。
+   ========================================================================= */
+
+@theme {
+  /* —— 纸 —— */
+  --color-paper: #f6f2ea;
+  --color-paper-raised: #fffdf8;
+  --color-paper-sunken: #efe9de;
+
+  /* —— 墨 —— */
+  --color-ink: #1a1614;
+  --color-ink-soft: #524b45;
+  --color-ink-faint: #8a8177;
+
+  /* —— 界栏 —— */
+  --color-rule: #e2dace;
+  --color-rule-strong: #cabfab;
+
+  /* —— 朱印：唯一的强调色 —— */
+  --color-seal: #ad3a29;
+  --color-seal-soft: #f4e5e0;
+
+  /* —— 状态：低饱和，融进纸墨体系，不跳出来 —— */
+  --color-ok: #3d6b4f;
+  --color-ok-soft: #e3ebe2;
+  --color-warn: #966a1c;
+  --color-warn-soft: #f3ead6;
+  --color-bad: #a5342a;
+  --color-bad-soft: #f3e0dc;
+  --color-muted-soft: #ebe5da;
+
+  --font-display: "Fraunces Variable", "Songti SC", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", sans-serif;
 }
 
-html,
-body,
-#root {
-  height: 100%;
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* 纸张纹理。极低透明度，只是让大片纸色不至于死平 —— 看不见但拿掉会觉得空。 */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* 数字一律等宽对齐 —— 表格里的分数、时间戳参差不齐会很难看 */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  ::selection {
+    background: var(--color-seal-soft);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-rule-strong) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-rule-strong);
+    border-radius: 9999px;
+    border: 2px solid var(--color-paper);
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
-body {
-  margin: 0;
-  font-family:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+@layer components {
+  /* —— 面板：细分隔线，不是卡片阴影 —— */
+  .panel {
+    background: var(--color-paper-raised);
+    border: 1px solid var(--color-rule);
+  }
+
+  /* —— 小标签：等宽、大写、字距拉开，像卷宗上的字段名 —— */
+  .label-cap {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+  }
+
+  /* —— 章节标题：标题 + 一条延伸到右端的细线 —— */
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .section-head::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--color-rule);
+  }
+
+  /* —— 展示字体：给大分数和数字用 —— */
+  .display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-variation-settings: "SOFT" 20, "WONK" 1;
+    letter-spacing: -0.02em;
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+  }
 }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(212 212 212) transparent;
+/* ============================================================================
+   动效
+   ----------------------------------------------------------------------------
+   克制但要有：一次性编排好进入，而不是到处散落小动画。
+   报告页的章节按顺序浮现，雷达条从 0 长开 —— 读的人能感觉到"这份东西
+   正在被展开"，而不是一屏静态文本。
+   ========================================================================= */
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
-*::-webkit-scrollbar-thumb {
-  background: rgb(212 212 212);
-  border-radius: 9999px;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-/* 进度不确定时的跑马灯动画 */
 @keyframes indeterminate {
   0% {
     transform: translateX(-120%) scaleX(0.4);
@@ -53,6 +194,25 @@ body {
   }
 }
 
+.reveal {
+  animation: reveal-up 0.44s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 雷达条：从左边长开。transform-origin 在左，配合 scaleX 比动 width 更省重排 */
+.bar-grow {
+  transform-origin: left center;
+  animation: grow-x 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 .animate-indeterminate {
   animation: indeterminate 1.4s ease-in-out infinite;
+}
+
+/* 尊重系统的减弱动效设置 */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .bar-grow,
+  .animate-indeterminate {
+    animation: none !important;
+  }
 }

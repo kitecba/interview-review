@@ -107,10 +107,10 @@ export function InterviewListPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold tracking-tight text-neutral-900">
+        <h1 className="text-lg font-semibold tracking-tight text-ink">
           面试列表
         </h1>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-ink-faint">
           上传面试录音，自动完成转写、切分、评分与整体复盘。
         </p>
       </div>
@@ -118,11 +118,11 @@ export function InterviewListPage() {
       <UploadPanel onCreated={(id) => navigate(`/interviews/${id}`)} />
 
       <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-neutral-900">
+        <div className="section-head">
+          <h2 className="text-sm font-semibold text-ink">
             全部面试
             {items.length > 0 && (
-              <span className="ml-2 font-normal text-neutral-400">
+              <span className="mono tnum ml-2 font-normal text-ink-faint">
                 {items.length}
               </span>
             )}
@@ -130,7 +130,7 @@ export function InterviewListPage() {
           <button
             type="button"
             onClick={reload}
-            className="rounded-md border border-neutral-300 bg-white px-2.5 py-1 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-50"
+            className="rounded-sm border border-rule-strong bg-paper-raised px-2.5 py-1 text-xs font-medium text-ink-soft transition-colors hover:bg-paper-sunken"
           >
             刷新
           </button>
@@ -146,15 +146,15 @@ export function InterviewListPage() {
             description="在上方拖入一段面试录音，开始你的第一次复盘。"
           />
         ) : (
-          <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
-            <div className="grid grid-cols-[minmax(0,1fr)_128px_96px_132px_96px] items-center gap-4 border-b border-neutral-200 bg-neutral-50/80 px-4 py-2.5 text-xs font-medium text-neutral-500">
-              <span>标题</span>
-              <span>状态</span>
-              <span className="text-right">总分</span>
-              <span>创建时间</span>
-              <span className="text-right">操作</span>
+          <div className="panel overflow-hidden">
+            <div className="grid grid-cols-[minmax(0,1fr)_128px_96px_132px_96px] items-center gap-4 border-b border-rule bg-paper-sunken/50 px-4 py-2.5">
+              <span className="label-cap">标题</span>
+              <span className="label-cap">状态</span>
+              <span className="label-cap text-right">总分</span>
+              <span className="label-cap">创建时间</span>
+              <span className="label-cap text-right">操作</span>
             </div>
-            <ul className="divide-y divide-neutral-100">
+            <ul className="divide-y divide-rule">
               {items.map((item) => {
                 const meta = interviewStatusMeta(item.status)
                 const run = progress[item.id]
@@ -163,13 +163,13 @@ export function InterviewListPage() {
                   <li
                     key={item.id}
                     onClick={() => openItem(item)}
-                    className="grid cursor-pointer grid-cols-[minmax(0,1fr)_128px_96px_132px_96px] items-center gap-4 px-4 py-3 transition-colors hover:bg-neutral-50"
+                    className="grid cursor-pointer grid-cols-[minmax(0,1fr)_128px_96px_132px_96px] items-center gap-4 px-4 py-3 transition-colors hover:bg-paper-sunken"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-neutral-900">
+                      <p className="truncate text-sm font-medium text-ink">
                         {item.title}
                       </p>
-                      <p className="mt-0.5 truncate text-xs text-neutral-400">
+                      <p className="mt-0.5 truncate text-xs text-ink-faint">
                         {[item.company, item.position]
                           .filter(Boolean)
                           .join(' · ') || '未填写公司与岗位'}
@@ -194,7 +194,7 @@ export function InterviewListPage() {
                             }
                           />
                           {item.status === 'processing' && run?.message && (
-                            <p className="mt-1 truncate text-[11px] text-neutral-400">
+                            <p className="mt-1 truncate text-[11px] text-ink-faint">
                               {run.message}
                             </p>
                           )}
@@ -204,13 +204,13 @@ export function InterviewListPage() {
 
                     <div className="text-right">
                       <span
-                        className={`text-sm font-semibold tabular-nums ${scoreTextColor(item.overall_score)}`}
+                        className={`display tnum text-sm font-semibold ${scoreTextColor(item.overall_score)}`}
                       >
                         {formatScore(item.overall_score)}
                       </span>
                     </div>
 
-                    <span className="text-xs text-neutral-500">
+                    <span className="mono tnum text-xs text-ink-faint">
                       {formatRelative(item.created_at)}
                     </span>
 
@@ -222,7 +222,7 @@ export function InterviewListPage() {
                             e.stopPropagation()
                             navigate(`/interviews/${item.id}/report`)
                           }}
-                          className="rounded-md border border-neutral-300 bg-white px-2 py-1 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+                          className="rounded-sm border border-rule-strong bg-paper-raised px-2 py-1 text-xs font-medium text-ink-soft transition-colors hover:bg-paper-sunken"
                         >
                           报告
                         </button>
@@ -234,7 +234,7 @@ export function InterviewListPage() {
                           e.stopPropagation()
                           void handleDelete(item)
                         }}
-                        className="rounded-md px-2 py-1 text-xs text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                        className="rounded-sm px-2 py-1 text-xs text-ink-faint transition-colors hover:bg-bad-soft hover:text-bad disabled:opacity-50"
                       >
                         删除
                       </button>

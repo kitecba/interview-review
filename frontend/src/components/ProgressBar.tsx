@@ -7,19 +7,19 @@ interface ProgressBarProps {
   tone?: string
 }
 
-export function ProgressBar({ value, className = '', tone = 'bg-blue-500' }: ProgressBarProps) {
+export function ProgressBar({ value, className = '', tone = 'bg-ink-soft' }: ProgressBarProps) {
   if (value == null) {
     return (
-      <div className={`h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 ${className}`}>
-        <div className={`h-full w-1/3 rounded-full ${tone} animate-indeterminate`} />
+      <div className={`h-1.5 w-full overflow-hidden bg-paper-sunken ${className}`}>
+        <div className={`h-full w-1/3 ${tone} animate-indeterminate`} />
       </div>
     )
   }
   const pct = clamp(value, 0, 100)
   return (
-    <div className={`h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 ${className}`}>
+    <div className={`h-1.5 w-full overflow-hidden bg-paper-sunken ${className}`}>
       <div
-        className={`h-full rounded-full transition-[width] duration-500 ease-out ${tone}`}
+        className={`h-full transition-[width] duration-500 ease-out ${tone}`}
         style={{ width: `${pct}%` }}
       />
     </div>

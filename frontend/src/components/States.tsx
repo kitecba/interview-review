@@ -7,7 +7,7 @@ interface SpinnerProps {
 export function Spinner({ className = 'size-5' }: SpinnerProps) {
   return (
     <svg
-      className={`animate-spin text-neutral-400 ${className}`}
+      className={`animate-spin text-ink-faint ${className}`}
       viewBox="0 0 24 24"
       fill="none"
       aria-hidden="true"
@@ -31,7 +31,7 @@ export function Spinner({ className = 'size-5' }: SpinnerProps) {
 
 export function LoadingState({ label = '加载中…' }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-2.5 py-16 text-sm text-neutral-500">
+    <div className="flex items-center justify-center gap-2.5 py-16 text-sm text-ink-faint">
       <Spinner />
       <span>{label}</span>
     </div>
@@ -52,9 +52,9 @@ export function ErrorState({
   retryLabel = '重试',
 }: ErrorStateProps) {
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50/60 p-5">
+    <div className="border border-bad/30 bg-bad-soft p-5">
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+        <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-bad text-paper-raised">
           <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5">
             <path
               fillRule="evenodd"
@@ -64,13 +64,13 @@ export function ErrorState({
           </svg>
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-red-800">{title}</p>
-          <p className="mt-1 text-sm break-words text-red-700/90">{message}</p>
+          <p className="text-sm font-medium text-bad">{title}</p>
+          <p className="mt-1 text-sm break-words text-ink-soft">{message}</p>
           {onRetry && (
             <button
               type="button"
               onClick={onRetry}
-              className="mt-3 rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-50"
+              className="mt-3 rounded-sm border border-bad/40 bg-paper-raised px-3 py-1.5 text-xs font-medium text-bad transition-colors hover:bg-bad-soft"
             >
               {retryLabel}
             </button>
@@ -89,11 +89,11 @@ interface EmptyStateProps {
 
 export function EmptyState({ title, description, icon }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-white px-6 py-16 text-center">
-      {icon && <div className="mb-3 text-neutral-300">{icon}</div>}
-      <p className="text-sm font-medium text-neutral-700">{title}</p>
+    <div className="flex flex-col items-center justify-center border border-dashed border-rule-strong bg-paper-raised px-6 py-16 text-center">
+      {icon && <div className="mb-3 text-ink-faint">{icon}</div>}
+      <p className="text-sm font-medium text-ink">{title}</p>
       {description && (
-        <p className="mt-1 max-w-md text-sm text-neutral-500">{description}</p>
+        <p className="mt-1 max-w-md text-sm text-ink-faint">{description}</p>
       )}
     </div>
   )

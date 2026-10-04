@@ -20,7 +20,7 @@ function BackLink() {
   return (
     <Link
       to="/"
-      className="inline-flex items-center gap-1.5 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
+      className="inline-flex items-center gap-1.5 text-sm text-ink-faint transition-colors hover:text-ink"
     >
       <svg viewBox="0 0 20 20" fill="currentColor" className="size-4">
         <path
@@ -36,9 +36,9 @@ function BackLink() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white px-3 py-2">
-      <p className="text-[11px] text-neutral-400">{label}</p>
-      <p className="mt-0.5 truncate text-sm font-medium text-neutral-800">{value}</p>
+    <div className="panel px-3 py-2">
+      <p className="label-cap">{label}</p>
+      <p className="mt-1 truncate text-sm font-medium text-ink tnum">{value}</p>
     </div>
   )
 }
@@ -94,11 +94,11 @@ export function InterviewDetailPage() {
       <div className="space-y-4">
         <BackLink />
         {detail.error.isNotFound ? (
-          <div className="rounded-lg border border-neutral-200 bg-white p-6 text-center">
-            <p className="text-sm font-medium text-neutral-800">
+          <div className="panel p-6 text-center">
+            <p className="text-sm font-medium text-ink">
               未找到该面试记录
             </p>
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-ink-faint">
               记录可能已被删除，或链接有误。
             </p>
           </div>
@@ -132,22 +132,22 @@ export function InterviewDetailPage() {
       <BackLink />
 
       {/* 头部 */}
-      <header className="rounded-xl border border-neutral-200 bg-white p-5">
+      <header className="panel p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-3">
-              <h1 className="truncate text-xl font-semibold tracking-tight text-neutral-900">
+              <h1 className="truncate text-xl font-semibold tracking-tight text-ink">
                 {interview.title}
               </h1>
               <Badge tone={meta.tone} dot pulse={interview.status === 'processing'}>
                 {meta.label}
               </Badge>
             </div>
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-ink-soft">
               {[interview.company, interview.position].filter(Boolean).join(' · ') ||
                 '未填写公司与岗位'}
             </p>
-            <p className="mt-1 text-xs text-neutral-400">
+            <p className="mono tnum mt-1 text-xs text-ink-faint">
               创建于 {formatDateTime(interview.created_at)}
             </p>
           </div>
@@ -155,7 +155,7 @@ export function InterviewDetailPage() {
             <button
               type="button"
               onClick={() => navigate(`/interviews/${id}/report`)}
-              className="shrink-0 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+              className="shrink-0 rounded-sm bg-ink px-4 py-2 text-sm font-medium text-paper-raised transition-colors hover:bg-ink-soft"
             >
               查看报告
             </button>
@@ -191,16 +191,16 @@ export function InterviewDetailPage() {
 
       {/* 运行进度 */}
       {run && (run.status === 'running' || run.status === 'pending') && (
-        <section className="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
+        <section className="border border-warn/30 bg-warn-soft p-4">
           <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-medium text-blue-800">
+            <span className="font-medium text-warn">
               {run.message ?? '正在处理…'}
             </span>
-            <span className="tabular-nums text-blue-700">
+            <span className="mono tnum text-warn">
               {Math.round(run.progress ?? 0)}%
             </span>
           </div>
-          <ProgressBar value={run.progress ?? null} />
+          <ProgressBar value={run.progress ?? null} tone="bg-warn" />
         </section>
       )}
 
@@ -209,7 +209,7 @@ export function InterviewDetailPage() {
       )}
 
       {/* 标签页 */}
-      <div className="flex items-center gap-1 border-b border-neutral-200">
+      <div className="flex items-center gap-1 border-b border-rule">
         <TabButton active={tab === 'stages'} onClick={() => setTab('stages')}>
           阶段时间线
         </TabButton>
@@ -222,21 +222,21 @@ export function InterviewDetailPage() {
       </div>
 
       {tab === 'stages' ? (
-        <section className="rounded-xl border border-neutral-200 bg-white p-5">
+        <section className="panel p-5">
           {stages.length === 0 ? (
-            <p className="py-6 text-center text-sm text-neutral-500">
+            <p className="py-6 text-center text-sm text-ink-faint">
               暂无阶段信息。
             </p>
           ) : (
             <>
               {failedStage && (
-                <div className="mb-4 flex items-center justify-between rounded-md border border-red-200 bg-red-50/60 px-3 py-2 text-xs text-red-700">
+                <div className="mb-4 flex items-center justify-between border border-bad/30 bg-bad-soft px-3 py-2 text-xs text-bad">
                   <span>流程在「{failedStage.label}」阶段失败。</span>
                   <button
                     type="button"
                     disabled={retryingStage === failedStage.stage}
                     onClick={() => handleRetry(failedStage.stage)}
-                    className="rounded-md border border-red-300 bg-white px-2.5 py-1 font-medium transition-colors hover:bg-red-50 disabled:opacity-60"
+                    className="rounded-sm border border-bad/40 bg-paper-raised px-2.5 py-1 font-medium transition-colors hover:bg-bad-soft disabled:opacity-60"
                   >
                     从该阶段重跑
                   </button>
@@ -251,16 +251,16 @@ export function InterviewDetailPage() {
           )}
         </section>
       ) : (
-        <section className="space-y-3 rounded-xl border border-neutral-200 bg-white p-5">
+        <section className="panel space-y-3 p-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-neutral-900">转写文本</h2>
+            <h2 className="text-sm font-semibold text-ink">转写文本</h2>
             <TranscriptLegendNote />
           </div>
           {transcript.loading && !transcript.data ? (
             <LoadingState label="正在加载转写文本…" />
           ) : transcript.error ? (
             transcript.error.isNotFound ? (
-              <p className="rounded-md border border-dashed border-neutral-300 px-4 py-8 text-center text-sm text-neutral-500">
+              <p className="border border-dashed border-rule-strong px-4 py-8 text-center text-sm text-ink-faint">
                 转写文本尚未生成（可能还没跑到切分阶段）。
               </p>
             ) : (
@@ -281,7 +281,7 @@ export function InterviewDetailPage() {
 
       {/* 耗时摘要 */}
       {run && run.status === 'done' && (
-        <p className="text-xs text-neutral-400">
+        <p className="text-xs text-ink-faint">
           本次运行已完成
           {stages.reduce((sum, s) => sum + (s.duration_ms ?? 0), 0) > 0 &&
             `，各阶段耗时合计 ${formatDuration(
@@ -309,8 +309,8 @@ function TabButton({
       onClick={onClick}
       className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
         active
-          ? 'border-neutral-900 text-neutral-900'
-          : 'border-transparent text-neutral-500 hover:text-neutral-800'
+          ? 'border-seal text-seal'
+          : 'border-transparent text-ink-faint hover:text-ink'
       }`}
     >
       {children}

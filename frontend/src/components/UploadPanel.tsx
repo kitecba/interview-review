@@ -75,10 +75,10 @@ export function UploadPanel({ onCreated }: UploadPanelProps) {
   }
 
   return (
-    <section className="rounded-xl border border-neutral-200 bg-white p-5">
+    <section className="panel p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-neutral-900">上传新面试录音</h2>
-        <span className="text-xs text-neutral-400">
+        <h2 className="text-sm font-semibold text-ink">上传新面试录音</h2>
+        <span className="text-xs text-ink-faint">
           支持 mp3 / m4a / wav / aac / flac
         </span>
       </div>
@@ -113,12 +113,12 @@ export function UploadPanel({ onCreated }: UploadPanelProps) {
             const dropped = e.dataTransfer.files?.[0]
             if (dropped) pickFile(dropped)
           }}
-          className={`flex min-h-[168px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 text-center transition-colors ${
+          className={`flex min-h-[168px] cursor-pointer flex-col items-center justify-center border-2 border-dashed px-6 text-center transition-colors ${
             dragging
-              ? 'border-blue-400 bg-blue-50/60'
+              ? 'border-warn bg-warn-soft'
               : file
-                ? 'border-emerald-300 bg-emerald-50/40'
-                : 'border-neutral-300 bg-neutral-50/60 hover:border-neutral-400'
+                ? 'border-ok/40 bg-ok-soft'
+                : 'border-rule-strong bg-paper-sunken/60 hover:border-ink-faint'
           }`}
         >
           <input
@@ -130,10 +130,10 @@ export function UploadPanel({ onCreated }: UploadPanelProps) {
           />
           {file ? (
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-neutral-800">
+              <p className="truncate text-sm font-medium text-ink">
                 {file.name}
               </p>
-              <p className="mt-1 text-xs text-neutral-500">
+              <p className="mono tnum mt-1 text-xs text-ink-faint">
                 {(file.size / 1024 / 1024).toFixed(1)} MB · 点击可重新选择
               </p>
             </div>
@@ -144,7 +144,7 @@ export function UploadPanel({ onCreated }: UploadPanelProps) {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
-                className="mb-2 size-8 text-neutral-400"
+                className="mb-2 size-8 text-ink-faint"
               >
                 <path
                   strokeLinecap="round"
@@ -152,10 +152,10 @@ export function UploadPanel({ onCreated }: UploadPanelProps) {
                   d="M12 16V4m0 0L8 8m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
                 />
               </svg>
-              <p className="text-sm font-medium text-neutral-700">
+              <p className="text-sm font-medium text-ink-soft">
                 拖拽音频到此处，或点击选择文件
               </p>
-              <p className="mt-1 text-xs text-neutral-400">
+              <p className="mt-1 text-xs text-ink-faint">
                 上传后会自动开始八个阶段的复盘流程
               </p>
             </>
@@ -169,7 +169,7 @@ export function UploadPanel({ onCreated }: UploadPanelProps) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="例如：字节跳动 后端二面"
-              className="w-full rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
+              className="w-full rounded-sm border border-rule-strong bg-paper-raised px-2.5 py-1.5 text-sm outline-none placeholder:text-ink-faint focus:border-ink focus:ring-1 focus:ring-ink"
             />
           </Field>
           <div className="grid grid-cols-2 gap-3">
@@ -178,7 +178,7 @@ export function UploadPanel({ onCreated }: UploadPanelProps) {
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
                 placeholder="可选"
-                className="w-full rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
+                className="w-full rounded-sm border border-rule-strong bg-paper-raised px-2.5 py-1.5 text-sm outline-none placeholder:text-ink-faint focus:border-ink focus:ring-1 focus:ring-ink"
               />
             </Field>
             <Field label="岗位">
@@ -186,7 +186,7 @@ export function UploadPanel({ onCreated }: UploadPanelProps) {
                 value={position}
                 onChange={(e) => setPosition(e.target.value)}
                 placeholder="可选"
-                className="w-full rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-sm outline-none placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
+                className="w-full rounded-sm border border-rule-strong bg-paper-raised px-2.5 py-1.5 text-sm outline-none placeholder:text-ink-faint focus:border-ink focus:ring-1 focus:ring-ink"
               />
             </Field>
           </div>
@@ -194,10 +194,10 @@ export function UploadPanel({ onCreated }: UploadPanelProps) {
             type="button"
             disabled={!file || !title.trim() || submitting}
             onClick={handleSubmit}
-            className="mt-auto inline-flex h-9 items-center justify-center gap-2 rounded-md bg-neutral-900 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
+            className="mt-auto inline-flex h-9 items-center justify-center gap-2 rounded-sm bg-ink px-4 text-sm font-medium text-paper-raised transition-colors hover:bg-ink-soft disabled:cursor-not-allowed disabled:bg-rule-strong disabled:text-ink-faint"
           >
             {submitting && (
-              <span className="size-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              <span className="size-3.5 animate-spin rounded-full border-2 border-paper-raised/40 border-t-paper-raised" />
             )}
             {submitting ? '上传中…' : '上传并开始复盘'}
           </button>
@@ -205,7 +205,7 @@ export function UploadPanel({ onCreated }: UploadPanelProps) {
       </div>
 
       {error && (
-        <p className="mt-3 flex items-center gap-2 text-xs text-red-600">
+        <p className="mt-3 flex items-center gap-2 text-xs text-bad">
           <Badge tone="red">错误</Badge>
           {error}
         </p>
@@ -225,9 +225,9 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-neutral-500">
+      <span className="label-cap mb-1 block">
         {label}
-        {required && <span className="ml-0.5 text-red-500">*</span>}
+        {required && <span className="ml-0.5 text-bad">*</span>}
       </span>
       {children}
     </label>

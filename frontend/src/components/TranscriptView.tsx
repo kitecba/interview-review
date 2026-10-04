@@ -19,7 +19,7 @@ export function TranscriptView({ speakers, segments }: TranscriptViewProps) {
 
   if (segments.length === 0) {
     return (
-      <p className="rounded-md border border-dashed border-neutral-300 bg-white px-4 py-8 text-center text-sm text-neutral-500">
+      <p className="border border-dashed border-rule-strong bg-paper-raised px-4 py-8 text-center text-sm text-ink-faint">
         还没有转写文本。
       </p>
     )
@@ -32,13 +32,13 @@ export function TranscriptView({ speakers, segments }: TranscriptViewProps) {
         {speakers.map((s) => (
           <span
             key={s.speaker_raw_id}
-            className="inline-flex items-center gap-2 rounded-md border border-neutral-200 bg-white px-2 py-1"
+            className="inline-flex items-center gap-2 rounded-sm border border-rule bg-paper-raised px-2 py-1"
           >
             <Badge tone={roleTone(s.role) as BadgeTone}>{roleLabel(s.role)}</Badge>
-            <span className="font-mono text-[11px] text-neutral-400">
+            <span className="mono text-[11px] text-ink-faint">
               {s.speaker_raw_id}
             </span>
-            <span className="text-[11px] text-neutral-400">
+            <span className="text-[11px] text-ink-faint tnum">
               置信度 {(s.confidence * 100).toFixed(0)}%
             </span>
             {s.manual_override && <Badge tone="amber">已手动指定</Badge>}
@@ -46,7 +46,7 @@ export function TranscriptView({ speakers, segments }: TranscriptViewProps) {
         ))}
       </div>
 
-      <ul className="divide-y divide-neutral-100 overflow-hidden rounded-lg border border-neutral-200 bg-white">
+      <ul className="divide-y divide-rule border border-rule bg-paper-raised">
         {segments.map((seg) => {
           const speaker = speakerMap.get(seg.speaker_raw_id)
           const role = speaker?.role ?? 'unknown'
@@ -57,7 +57,7 @@ export function TranscriptView({ speakers, segments }: TranscriptViewProps) {
           const tone = roleTone(role) as BadgeTone
           return (
             <li key={seg.seq} className="flex gap-3 px-4 py-2.5">
-              <span className="mt-0.5 w-12 shrink-0 font-mono text-[11px] text-neutral-400 tabular-nums">
+              <span className="mono tnum mt-0.5 w-12 shrink-0 text-[11px] text-ink-faint">
                 {formatTimestamp(seg.start_ms)}
               </span>
               <span className="mt-0.5 w-16 shrink-0">
@@ -65,14 +65,14 @@ export function TranscriptView({ speakers, segments }: TranscriptViewProps) {
               </span>
               <div className="min-w-0 flex-1">
                 {corrected ? (
-                  <p className="rounded bg-amber-50 px-2 py-1 text-sm text-neutral-800 ring-1 ring-amber-100 ring-inset">
+                  <p className="bg-warn-soft px-2 py-1 text-sm text-ink ring-1 ring-warn/20 ring-inset">
                     {seg.corrected_text}
-                    <span className="mt-1 block text-xs text-neutral-400 line-through">
+                    <span className="mono mt-1 block text-xs text-ink-faint line-through">
                       {seg.text}
                     </span>
                   </p>
                 ) : (
-                  <p className="text-sm text-neutral-700">{seg.text}</p>
+                  <p className="text-sm text-ink-soft">{seg.text}</p>
                 )}
               </div>
             </li>
@@ -85,7 +85,7 @@ export function TranscriptView({ speakers, segments }: TranscriptViewProps) {
 
 export function TranscriptLegendNote() {
   return (
-    <p className="text-xs text-neutral-400">
+    <p className="text-xs text-ink-faint">
       高亮句子表示该句经过纠错，删除线为原始识别文本。
     </p>
   )
