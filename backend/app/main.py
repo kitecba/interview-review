@@ -18,7 +18,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import routes_health
+from app.api import routes_health, routes_interviews, routes_runs
 from app.core.config import get_settings
 from app.core.logging import setup_logging
 
@@ -77,6 +77,8 @@ app.add_middleware(
 )
 
 app.include_router(routes_health.router)
+app.include_router(routes_interviews.router)
+app.include_router(routes_runs.router)
 
 
 @app.get("/")
