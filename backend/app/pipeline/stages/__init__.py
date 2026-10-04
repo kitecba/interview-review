@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING
 
 from app.pipeline.stages.base import Stage
 from app.pipeline.stages.s0_preprocess import PreprocessStage
+from app.pipeline.stages.s1_upload_oss import UploadOssStage
+from app.pipeline.stages.s2_transcribe import TranscribeStage
 
 # 只在类型检查时导入：runner 会反过来导入本模块来注册阶段，
 # 运行时导入会形成循环。
@@ -19,10 +21,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# 阶段类的清单。后续阶段（s1_upload_oss / s2_transcribe / s3_role_mapping …）
-# 实现后加到这里。
+# 阶段类的清单。后续阶段（s3_role_mapping / s4_qa_segmentation …）实现后加到这里。
 _BUILTIN_STAGES: tuple[type[Stage], ...] = (
     PreprocessStage,
+    UploadOssStage,
+    TranscribeStage,
 )
 
 
