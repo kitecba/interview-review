@@ -68,8 +68,10 @@ class PipelineRun(SQLModel, table=True):
 
     id: str = Field(default_factory=_uuid, primary_key=True)
     interview_id: str = Field(foreign_key="interview.id", index=True)
-    # running / done / failed / canceled
-    status: str = Field(default="running", index=True)
+    # pending / running / done / failed / canceled
+    # 默认是 pending 而不是 running：running 代表「正在执行」，进程重启时
+    # 会被当成残留任务捡回来重跑。刚创建还没排队的 run 不该是那个状态。
+    status: str = Field(default="pending", index=True)
     current_stage: str = "s0_preprocess"
     progress: int = 0
     message: str | None = None

@@ -37,6 +37,13 @@ async def lifespan(app: FastAPI):
     init_db()
     logger.info("数据库就绪：%s", settings.db_path)
 
+    # 启动流水线执行器。它会在启动时把上次崩溃留下的 running 状态 run 捡回来继续跑。
+    from app.pipeline.runner import runner
+    from app.pipeline.stages import register_builtin_stages
+
+    register_builtin_stages(runner)
+    await runner.start()
+
     missing = settings.missing_keys()
     if missing:
         # 不阻止启动 —— 否则连 /api/health 都打不开，用户没法自查缺了什么
@@ -46,6 +53,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    await runner.stop()
     logger.info("服务已停止")
 
 

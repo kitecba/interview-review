@@ -59,12 +59,18 @@ class Settings(BaseSettings):
         return self.data_path / "tmp_audio"
 
     @property
+    def uploads_path(self) -> Path:
+        """用户上传的原始音频。按 interview_id 分子目录保存。"""
+        return self.data_path / "uploads"
+
+    @property
     def db_path(self) -> Path:
         return self.data_path / "app.db"
 
     def ensure_dirs(self) -> None:
         self.data_path.mkdir(parents=True, exist_ok=True)
         self.tmp_audio_path.mkdir(parents=True, exist_ok=True)
+        self.uploads_path.mkdir(parents=True, exist_ok=True)
 
     def missing_keys(self) -> list[str]:
         """返回尚未配置的关键项名称。空列表代表配置齐全。"""

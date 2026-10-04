@@ -48,6 +48,10 @@ class StageStatus(StrEnum):
 
 
 class RunStatus(StrEnum):
+    # 已创建但尚未开始。必须与 RUNNING 区分开 —— 否则进程重启时的
+    # 「捡回未完成的任务」会把刚建好、还没排队的 run 也当成残留捡一遍，
+    # 导致同一个 run 被执行两次。
+    PENDING = "pending"
     RUNNING = "running"
     DONE = "done"
     FAILED = "failed"
