@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from app.prompts import p_repair, p_role, p_segment  # noqa: F401
+from app.prompts import p_repair, p_role, p_scoring, p_segment  # noqa: F401
 from app.prompts.registry import Prompt, all_prompts, get, register
 
 __all__ = ["Prompt", "all_prompts", "get", "register"]

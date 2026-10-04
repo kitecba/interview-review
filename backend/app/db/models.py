@@ -202,6 +202,8 @@ class QaAnalysis(SQLModel, table=True):
     qa_pair_id: str = Field(foreign_key="qa_pair.id", index=True)
     interview_id: str = Field(foreign_key="interview.id", index=True)
     overall_score: float = 0.0
+    # 一句话总评，用于报告里每道题的开头
+    summary: str = ""
     # {"技术准确性": 8, "表达结构": 7, ...}
     dimension_scores_json: str = "{}"
     strengths_json: str = "[]"

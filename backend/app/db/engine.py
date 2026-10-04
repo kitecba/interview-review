@@ -57,6 +57,21 @@ def init_db() -> None:
     _add_missing_columns(engine)
 
 
+def _sql_literal(value: object) -> str | None:
+    """把 Python 标量渲染成 SQL 字面量，用于 ADD COLUMN 的 DEFAULT 子句。
+
+    只支持标量。列表、字典这类结构在 SQLite 里没有对应的字面量写法，
+    返回 None 让调用方走告警分支。
+    """
+    if isinstance(value, bool):
+        return "1" if value else "0"
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, str):
+        return "'" + value.replace("'", "''") + "'"
+    return None
+
+
 def _add_missing_columns(engine) -> list[str]:
     """给已存在的表补上模型里新增的列。
 
@@ -64,8 +79,10 @@ def _add_missing_columns(engine) -> list[str]:
     引入迁移框架的成本大于收益。而更现实的原因是 —— 每次重建数据库都要把
     已经花过钱的语音转写重新跑一遍，代价不小。
 
-    只处理可以安全追加的列（可空、无 server_default）。其余的只告警，
-    因为 SQLite 的 ALTER TABLE 能力有限，改类型或加非空列需要重建表。
+    SQLite 的 ALTER TABLE ADD COLUMN 能力有限，但对"追加一列"这个场景够用，
+    条件是**非空列必须带 DEFAULT**。SQLModel 里写 `summary: str = ""`
+    生成的正是非空列，所以这里要把 Python 侧的默认值翻译成 SQL 字面量，
+    否则就只能跳过（早期版本就是这么漏掉 summary 列的）。
     """
     from sqlalchemy import inspect, text
 
@@ -82,20 +99,30 @@ def _add_missing_columns(engine) -> list[str]:
             if column.name in existing:
                 continue
 
-            if not column.nullable and column.server_default is None:
-                logger.warning(
-                    "列 %s.%s 是非空且无默认值，SQLite 无法直接追加，需要手动迁移",
-                    table_name,
-                    column.name,
-                )
-                continue
-
             col_type = column.type.compile(dialect=engine.dialect)
+            ddl = f'ALTER TABLE "{table_name}" ADD COLUMN "{column.name}" {col_type}'
+
+            if not column.nullable:
+                default_sql: str | None = None
+                if column.server_default is not None:
+                    arg = getattr(column.server_default, "arg", None)
+                    if arg is not None:
+                        default_sql = str(arg)
+                elif column.default is not None and getattr(column.default, "is_scalar", False):
+                    default_sql = _sql_literal(column.default.arg)
+
+                if default_sql is None:
+                    logger.warning(
+                        "列 %s.%s 是非空且无标量默认值，SQLite 无法直接追加，需要手动迁移",
+                        table_name,
+                        column.name,
+                    )
+                    continue
+                ddl += f" NOT NULL DEFAULT {default_sql}"
+
             try:
                 with engine.begin() as conn:
-                    conn.execute(
-                        text(f'ALTER TABLE "{table_name}" ADD COLUMN "{column.name}" {col_type}')
-                    )
+                    conn.execute(text(ddl))
                 added.append(f"{table_name}.{column.name}")
             except Exception as exc:  # pragma: no cover
                 logger.warning("追加列失败 %s.%s：%s", table_name, column.name, exc)
