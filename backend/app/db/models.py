@@ -118,6 +118,10 @@ class Transcript(SQLModel, table=True):
     speaker_count: int = 0
     # 带说话人标记的纯文本，供 LLM 直接消费
     text: str = ""
+    # 经大模型纠错后的全文。下游阶段优先用它，为空则回退到 text。
+    # ASR 对中英混合的技术名词识别很差（实测 SQL→circle、LangGraph→long graph），
+    # 原文保留在 text 里便于对照。
+    corrected_text: str | None = None
     # 原始响应，留作审计与问题排查
     raw_json: str = "{}"
     # 是否切片（仅当音频超过 2 小时才切片）
@@ -141,6 +145,9 @@ class TranscriptSegment(SQLModel, table=True):
     start_ms: int = 0
     end_ms: int = 0
     text: str = ""
+    # ASR 原始文本在被大模型纠错后，错的那部分写在这里。
+    # 为 None 表示这一句没有改动 —— 前端据此只高亮真正被改过的句子。
+    corrected_text: str | None = None
 
 
 class SpeakerMapping(SQLModel, table=True):

@@ -52,6 +52,13 @@ class LlmResult:
     latency_ms: int = 0
     # 思考模式下模型返回的推理内容。多轮时必须回传，否则 400。
     reasoning_content: str | None = None
+    # "stop" 是正常结束，"length" 表示撞到 max_tokens 被截断 ——
+    # 截断是 JSON 解析失败最常见的原因，单独拎出来便于给出准确的报错。
+    finish_reason: str = ""
+
+    @property
+    def truncated(self) -> bool:
+        return self.finish_reason == "length"
 
     @property
     def cost_estimate(self) -> float:
@@ -193,6 +200,7 @@ class DeepSeekClient:
                     completion_tokens=int(usage.get("completion_tokens") or 0),
                     latency_ms=latency_ms,
                     reasoning_content=message.get("reasoning_content"),
+                    finish_reason=choice.get("finish_reason") or "",
                 )
 
             except LlmError as exc:
@@ -251,9 +259,12 @@ class DeepSeekClient:
             return _parse_json(result.content), result
         except LlmJsonError as first_error:
             if not repair_on_invalid:
-                raise
+                raise _explain(first_error, result)
 
-            logger.warning("模型返回的不是合法 JSON，发起一次修复调用")
+            logger.warning(
+                "模型返回的不是合法 JSON%s，发起一次修复调用",
+                "（输出被截断）" if result.truncated else "",
+            )
             repair_messages = [
                 *messages,
                 # 把上一轮的推理内容一并带回，否则思考模式下会 400
@@ -283,10 +294,28 @@ class DeepSeekClient:
             try:
                 return _parse_json(repair_result.content), repair_result
             except LlmJsonError:
-                raise LlmJsonError(
-                    "模型连续两次返回的内容都无法解析为 JSON",
-                    detail=repair_result.content[:500],
+                raise _explain(
+                    LlmJsonError(
+                        "模型连续两次返回的内容都无法解析为 JSON",
+                        detail=repair_result.content[:500],
+                    ),
+                    repair_result,
                 ) from first_error
+
+
+def _explain(error: LlmJsonError, result: LlmResult) -> LlmJsonError:
+    """给 JSON 解析失败补上可操作的原因。
+
+    截断是这类失败最常见的原因，而且报错信息（"无法解析为 JSON"）完全指不到
+    要害 —— 使用者会去怀疑提示词，实际上是 max_tokens 给小了。
+    """
+    if result.truncated:
+        return LlmJsonError(
+            f"模型输出被 max_tokens 截断（本次输出 {result.completion_tokens} token），"
+            "请调大 max_tokens 或减小单次处理的数据量",
+            detail=result.content[-300:],
+        )
+    return error
 
 
 def _parse_json(content: str) -> dict[str, Any]:

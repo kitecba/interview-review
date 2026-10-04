@@ -13,15 +13,19 @@ from enum import StrEnum
 
 
 class Stage(StrEnum):
-    """流水线的七个阶段。"""
+    """流水线的八个阶段。"""
 
     PREPROCESS = "s0_preprocess"
     UPLOAD_OSS = "s1_upload_oss"
     TRANSCRIBE = "s2_transcribe"
-    ROLE_MAPPING = "s3_role_mapping"
-    QA_SEGMENTATION = "s4_qa_segmentation"
-    QA_SCORING = "s5_qa_scoring"
-    SUMMARY = "s6_summary"
+    # 插在转写和角色判定之间：ASR 对中英混合的技术名词识别很差
+    # （实测 SQL→circle、LangGraph→long graph），先纠错能让后面每一步
+    # 都建立在更可靠的文本上。
+    TRANSCRIPT_REPAIR = "s3_transcript_repair"
+    ROLE_MAPPING = "s4_role_mapping"
+    QA_SEGMENTATION = "s5_qa_segmentation"
+    QA_SCORING = "s6_qa_scoring"
+    SUMMARY = "s7_summary"
 
 
 # 执行顺序
@@ -32,6 +36,7 @@ STAGE_LABELS: dict[str, str] = {
     Stage.PREPROCESS: "音频预处理",
     Stage.UPLOAD_OSS: "上传音频",
     Stage.TRANSCRIBE: "语音转写",
+    Stage.TRANSCRIPT_REPAIR: "转写纠错",
     Stage.ROLE_MAPPING: "区分说话人角色",
     Stage.QA_SEGMENTATION: "切分问答对",
     Stage.QA_SCORING: "逐题评分",

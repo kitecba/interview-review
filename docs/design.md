@@ -17,17 +17,22 @@ FastAPI（单进程，--workers 1）
    └─ db/          SQLModel + SQLite (WAL)
 ```
 
-## 流水线的七个阶段
+## 流水线的八个阶段
 
 | 阶段 | 做什么 | 失败重试策略 |
 |---|---|---|
 | `s0_preprocess` | ffmpeg 归一化 16kHz/单声道，探测时长 | 立即重试 ≤3 次 |
 | `s1_upload_oss` | 上传 OSS，生成签名 URL | 重试 ≤3 次，签名可重新生成 |
 | `s2_transcribe` | 百炼 `paraformer-v2` 提交 + 轮询 | **提交成功即落库 task_id，之后只重轮询，绝不重新提交** |
-| `s3_role_mapping` | LLM 判定谁是面试官 / 候选人 | 退避重试 ≤3，JSON 失败触发一次修复调用 |
-| `s4_qa_segmentation` | LLM 切分「问题-回答」对 | 同上 |
-| `s5_qa_scoring` | LLM 逐题评分（分批 5–8 题） | **批级幂等**，只重跑失败的批次 |
-| `s6_summary` | LLM 生成整体报告 | 同 s3 |
+| `s3_transcript_repair` | LLM 纠正 ASR 的技术名词识别错误 | 分批处理，**单批失败不影响其余批次** |
+| `s4_role_mapping` | LLM 判定谁是面试官 / 候选人 | 退避重试 ≤3，JSON 失败触发一次修复调用 |
+| `s5_qa_segmentation` | LLM 切分「问题-回答」对 | 同上 |
+| `s6_qa_scoring` | LLM 逐题评分（分批 5–8 题） | **批级幂等**，只重跑失败的批次 |
+| `s7_summary` | LLM 生成整体报告 | 同 s4 |
+
+> `s3_transcript_repair` 是实测之后补上的。ASR 对中英混合的技术名词识别很差
+> （真实录音里 `SQL → circle`、`LangGraph → long graph`、`Agent → A` 反复出现），
+> 先纠错能让后面每一步都建立在更可靠的文本上。详见 `docs/probes.md`。
 
 ## 关键决策与理由
 

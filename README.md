@@ -96,7 +96,8 @@ frontend/src/ React 前端
 ## 开发进度
 
 - [x] **Phase 0** 项目骨架、配置、数据库、日志脱敏、环境自检、DeepSeek 探针
-- [ ] **Phase 1** 打通到转写：ffmpeg → OSS → 百炼，用 CLI 验证 ASR 质量
+- [x] **Phase 1** 打通到转写：ffmpeg → OSS → 百炼，已用真实面试录音验证
+- [x] **Phase 1.5** 转写纠错：LLM 修正 ASR 的技术名词识别错误
 - [ ] **Phase 2** 首个端到端报告：角色判定 → 问答切分 → 逐题评分 → 整体汇总
 - [ ] **Phase 3** Web 化：上传 / 进度 / 报告页面
 - [ ] **Phase 4** SSE 实时进度、断点重跑、成本面板、说话人手工改判
