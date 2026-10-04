@@ -17,6 +17,7 @@ from app.pipeline.stages.s3_transcript_repair import TranscriptRepairStage
 from app.pipeline.stages.s4_role_mapping import RoleMappingStage
 from app.pipeline.stages.s5_qa_segmentation import QaSegmentationStage
 from app.pipeline.stages.s6_qa_scoring import QaScoringStage
+from app.pipeline.stages.s7_summary import SummaryStage
 
 # 只在类型检查时导入：runner 会反过来导入本模块来注册阶段，
 # 运行时导入会形成循环。
@@ -34,6 +35,7 @@ _BUILTIN_STAGES: tuple[type[Stage], ...] = (
     RoleMappingStage,
     QaSegmentationStage,
     QaScoringStage,
+    SummaryStage,
 )
 
 
