@@ -1,0 +1,67 @@
+#!/bin/sh
+# 提交前扫描疑似密钥，防止凭据被写进版本库。
+#
+# 启用（每个 clone 需要执行一次）：
+#     git config core.hooksPath .githooks
+#
+# 跳过（仅在确认无误时使用）：
+#     git commit --no-verify
+
+set -e
+
+# 只看将要提交的内容
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$staged" ]; then
+    exit 0
+fi
+
+found=0
+
+# 1) 明确不该被提交的文件
+for f in $staged; do
+    case "$f" in
+        .env|*/.env|*.env.local|*.env.production)
+            echo "  [拦截] $f —— .env 文件不应提交"
+            found=1
+            ;;
+        *.db|*.db-wal|*.db-shm)
+            echo "  [拦截] $f —— 数据库文件不应提交"
+            found=1
+            ;;
+        *.mp3|*.m4a|*.wav|*.aac|*.flac)
+            echo "  [拦截] $f —— 音频文件不应提交（面试录音属于隐私，且体积大）"
+            found=1
+            ;;
+    esac
+done
+
+# 2) 文件内容里的疑似密钥
+patterns='sk-[A-Za-z0-9_-]{20,}|LTAI[A-Za-z0-9]{12,}|AKID[A-Za-z0-9]{12,}|-----BEGIN [A-Z ]*PRIVATE KEY-----'
+
+for f in $staged; do
+    [ -f "$f" ] || continue
+    # 跳过二进制文件
+    if ! grep -Iq . "$f" 2>/dev/null; then
+        continue
+    fi
+    # 跳过本钩子自身（里面的正则字符串本身就会命中）
+    case "$f" in
+        .githooks/*) continue ;;
+    esac
+
+    if matches=$(grep -nEI "$patterns" "$f" 2>/dev/null); then
+        echo "  [拦截] $f 中发现疑似密钥："
+        echo "$matches" | sed 's/^/         /' | cut -c1-120
+        found=1
+    fi
+done
+
+if [ "$found" -ne 0 ]; then
+    echo ""
+    echo "提交已中止。请把凭据移到 .env（已被 .gitignore 忽略）后重试。"
+    echo "确认是误报时可使用：git commit --no-verify"
+    exit 1
+fi
+
+exit 0

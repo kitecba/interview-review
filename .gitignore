@@ -1,0 +1,49 @@
+# ---- 环境与密钥（绝不能提交）----
+.env
+.env.*
+!.env.example
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# ---- Node / 前端 ----
+node_modules/
+dist/
+.vite/
+*.local
+
+# ---- 数据与产物（体积大 / 含隐私）----
+backend/data/
+data/
+samples/
+*.db
+*.db-wal
+*.db-shm
+
+# ---- 音频文件：面试录音属于隐私，不进版本库 ----
+*.mp3
+*.m4a
+*.wav
+*.aac
+*.flac
+*.ogg
+
+# ---- IDE ----
+.idea/
+.vscode/
+*.iml
+
+# ---- 系统 ----
+Thumbs.db
+Desktop.ini
+.DS_Store

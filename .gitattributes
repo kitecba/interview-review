@@ -1,0 +1,28 @@
+# 统一换行符。
+#
+# Windows 上 git 默认会把 LF 转成 CRLF，这会带来两个具体问题：
+#   1. .githooks/pre-commit 是 shell 脚本，CRLF 会让 Git Bash 报 bad interpreter
+#   2. 跨平台协作时整个文件显示为「全部改动」，diff 没法看
+
+* text=auto eol=lf
+
+# shell 脚本必须 LF
+*.sh text eol=lf
+.githooks/* text eol=lf
+
+# Windows 批处理必须 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制文件不参与换行符转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+*.woff binary
+*.woff2 binary
+
+# 锁文件不要做 diff（体积大且无意义）
+package-lock.json -diff linguist-generated=true
