@@ -25,25 +25,38 @@
 
 ## 探针记录
 
-### 待运行
+### 2026-10-04 · `deepseek-flash` · 结论：**不支持音频**
+
+运行命令：
 
 ```
 backend/.venv/Scripts/python scripts/probe_deepseek_audio.py
 ```
 
-运行后请把输出中的以下四项抄录到下方：
-
 | 探测项 | 结论 | 备注 |
 |---|---|---|
-| 模型列表 | _待填_ | 配置的 `deepseek-flash` 是否在 `/models` 返回中 |
-| JSON 输出模式 | _待填_ | 是否稳定返回可解析 JSON |
-| 思考模式 + temperature | _待填_ | 传了是否报错 |
-| 音频输入 | _待填_ | 三种内容块写法各自的结果 |
+| 模型列表 | 可用 | `deepseek-flash` 存在，账号下可见的模型只有它和 `deepseek-v4-pro` |
+| JSON 输出模式 | 可用 | `response_format={"type":"json_object"}` 稳定返回可解析 JSON |
+| 思考模式 + temperature | 不报错 | 服务端接受 `enable_thinking=true` 与 `temperature` 并存，不返回错误 |
+| **音频输入** | **不支持** | 三种写法全部被拒 |
 
-**运行日期**：\
-**模型名**：\
-**原始输出**：
+**关键证据** —— 服务端返回的错误信息直接列出了它接受的内容块类型：
 
 ```
-（粘贴探针输出）
+HTTP 422 unknown variant `input_audio`, expected one of `text`, `image_url`, `file`
 ```
+
+三种尝试（`input_audio`、`audio_url`、裸 `audio`）都是同一个 422，错误里那句
+`expected one of text, image_url, file` 就是权威答案：**这台服务端的内容块只有
+文本、图片、文件三种，没有音频**。注意 `file` 是文件类型（PDF 之类），不是音频。
+
+这一条比调研阶段所有二手资料都可靠 —— 之前两个来源给的结论互相矛盾
+（一方说支持音频，一方说纯文本），现在不用再猜了。
+
+**对方案的影响**：无。架构本来就是「音频 → ASR → 文本 → DeepSeek」两步走，
+理由也不只是这一条（90 分钟录音超单请求体积上限、大模型不做说话人分离）。
+转录与复盘分离的设计无需调整。
+
+**一个意外收获**：`enable_thinking=true` 与 `temperature` 同时传**不会报错**。
+实现里可以少一层条件分支，不过按官方文档该参数在思考模式下会被忽略，
+所以仍然不该指望用 `temperature` 控制思考模式的输出随机性。
