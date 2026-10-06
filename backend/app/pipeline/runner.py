@@ -87,14 +87,20 @@ class PipelineRunner:
     # ------------------------------------------------------------------
     # 入队与取消
     # ------------------------------------------------------------------
-    async def enqueue(self, run_id: str, from_stage: str | None = None) -> None:
+    async def enqueue(self, run_id: str, from_stage: str | None = None) -> bool:
+        """入队一个 run。返回 False 表示它已在队列中或正在执行、本次被忽略。
+
+        返回值很重要：API 层要靠它区分「已受理」和「静默忽略」——
+        尤其是改判角色后触发重跑的场景，用户需要明确知道改动有没有生效。
+        """
         if run_id in self._active:
             # 已经在排队或正在跑，重复入队会导致同一份工作执行两遍
             logger.debug("run 已在队列中，忽略重复入队：%s", run_id)
-            return
+            return False
         self._canceled.discard(run_id)
         self._active.add(run_id)
         await self._queue.put((run_id, from_stage))
+        return True
 
     def cancel(self, run_id: str) -> None:
         """协作式取消。阶段内部需定期检查 is_canceled 才会及时响应。"""
@@ -102,6 +108,10 @@ class PipelineRunner:
 
     def is_canceled(self, run_id: str) -> bool:
         return run_id in self._canceled
+
+    def is_active(self, run_id: str) -> bool:
+        """该 run 是否正在排队或执行中。API 层据此拒绝并发的重跑/改判请求。"""
+        return run_id in self._active
 
     @property
     def queued(self) -> int:

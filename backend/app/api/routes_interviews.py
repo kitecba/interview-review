@@ -19,6 +19,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from fastapi import APIRouter, Form, HTTPException, UploadFile
+from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.core.config import get_settings
@@ -432,6 +433,139 @@ def _analysis_payload(analysis: QaAnalysis) -> dict:
         "improvement": load(analysis.improvement_json, []),
         "knowledge_points": load(analysis.knowledge_points_json, []),
         "predicted_followups": load(analysis.predicted_followups_json, []),
+    }
+
+
+# ----------------------------------------------------------------------
+# 说话人改判
+# ----------------------------------------------------------------------
+class SpeakerMappingItem(BaseModel):
+    speaker_raw_id: int
+    #: interviewer / candidate / auto。"auto" 表示删除人工改判、恢复自动判定。
+    role: str
+
+
+class SpeakerMappingUpdate(BaseModel):
+    mappings: list[SpeakerMappingItem]
+
+
+@router.put("/interviews/{interview_id}/speaker-mapping")
+async def update_speaker_mapping(interview_id: str, body: SpeakerMappingUpdate) -> dict:
+    """人工改判说话人角色。
+
+    **为什么改判后要重跑**：角色映射参与 s5 的幂等键 —— 改了角色，切分、评分、
+    汇总的结果都会随之失效，所以要自动从对应阶段重跑，而不是留下新旧混杂的数据。
+
+    - 指定 interviewer/candidate：落一条 manual_override 记录，从 s5 重跑
+      （角色判定 s4 的结果会被保留，不会被自动结果覆盖）。
+    - 指定 auto：删除人工改判记录，从 s4 重跑（重新让大模型判定）。
+
+    流水线正在运行时拒绝改判 —— 阶段产物正在被读写，此时改会造成竞态。
+    """
+    if not body.mappings:
+        raise HTTPException(status_code=422, detail="mappings 不能为空")
+
+    allowed = {"interviewer", "candidate", "auto"}
+    for item in body.mappings:
+        if item.role not in allowed:
+            raise HTTPException(
+                status_code=422,
+                detail=f"说话人 {item.speaker_raw_id} 的角色必须是 {'、'.join(sorted(allowed))} 之一",
+            )
+
+    with Session(get_engine()) as session:
+        interview = session.get(Interview, interview_id)
+        if interview is None:
+            raise HTTPException(status_code=404, detail="面试记录不存在")
+
+        run = session.exec(
+            select(PipelineRun)
+            .where(PipelineRun.interview_id == interview_id)
+            .order_by(PipelineRun.created_at.desc())
+        ).first()
+        if run is None:
+            raise HTTPException(status_code=409, detail="该面试还没有运行记录，无法改判")
+
+        # **立刻捕获**。SQLModel 默认 expire_on_commit：commit 之后所有属性过期，
+        # session 关闭后再访问 run.id 会对游离实例触发刷新，直接抛
+        # DetachedInstanceError（这个 bug 是接口测试抓出来的）。
+        run_id = run.id
+
+        if runner.is_active(run_id):
+            raise HTTPException(
+                status_code=409,
+                detail="流水线正在运行，请等它结束（或取消）后再改判",
+            )
+
+        existing = session.exec(
+            select(SpeakerMapping).where(SpeakerMapping.interview_id == interview_id)
+        ).all()
+        by_key = {(row.chunk_index, row.speaker_raw_id): row for row in existing}
+
+        restore_auto = False
+        for item in body.mappings:
+            if item.role == "auto":
+                # 恢复自动：删掉人工记录。s4 重跑时会重建自动判定行。
+                for row in existing:
+                    if row.speaker_raw_id == item.speaker_raw_id and row.manual_override:
+                        session.delete(row)
+                restore_auto = True
+                continue
+
+            row = by_key.get((0, item.speaker_raw_id))
+            if row is None:
+                row = SpeakerMapping(
+                    interview_id=interview_id,
+                    chunk_index=0,
+                    speaker_raw_id=item.speaker_raw_id,
+                )
+            row.role = item.role
+            row.confidence = 1.0
+            row.evidence = "人工指定"
+            row.manual_override = True
+            session.add(row)
+        session.commit()
+
+        mappings = session.exec(
+            select(SpeakerMapping).where(SpeakerMapping.interview_id == interview_id)
+        ).all()
+
+        # 在最后一次 commit **之前**序列化 —— commit 会让所有已加载属性过期，
+        # 之后在游离实例上访问就会抛 DetachedInstanceError
+        mappings_payload = [
+            {
+                "speaker_raw_id": m.speaker_raw_id,
+                "role": m.role,
+                "confidence": m.confidence,
+                "evidence": m.evidence,
+                "manual_override": m.manual_override,
+            }
+            for m in sorted(mappings, key=lambda x: x.speaker_raw_id)
+        ]
+
+        # 立即置为 processing，前端轮询才能马上恢复；正式的 RUNNING
+        # 由执行器在开始执行时写入
+        interview.status = "processing"
+        session.add(interview)
+        session.commit()
+
+    # 有人工记录被删除（恢复自动）时，要连角色判定一起重跑
+    from_stage = "s4_role_mapping" if restore_auto else "s5_qa_segmentation"
+    enqueued = await runner.enqueue(run_id, from_stage=from_stage)
+    if not enqueued:
+        # is_active 检查和 enqueue 之间有竞态；enqueue 返回 False 兜住它
+        raise HTTPException(status_code=409, detail="流水线刚刚开始运行，请稍后再试")
+
+    logger.info(
+        "说话人已改判：%s interview=%s 从 %s 重跑",
+        [(m.speaker_raw_id, m.role) for m in body.mappings],
+        interview_id,
+        from_stage,
+    )
+    return {
+        "run_id": run_id,
+        "from_stage": from_stage,
+        "mappings": mappings_payload,
     }
 
 

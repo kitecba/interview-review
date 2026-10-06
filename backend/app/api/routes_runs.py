@@ -88,11 +88,26 @@ async def start_run(interview_id: str, body: RunRequest | None = None) -> dict:
             session.refresh(run)
 
         run_id = run.id
-        interview.status = "processing"
-        session.add(interview)
-        session.commit()
 
-    await runner.enqueue(run_id, from_stage=from_stage)
+    if runner.is_active(run_id):
+        raise HTTPException(
+            status_code=409,
+            detail="流水线正在运行，请等它结束（或取消）后再重跑",
+        )
+
+    # 立即置为 processing，前端轮询才能马上恢复；正式的 RUNNING 由执行器写入
+    with Session(get_engine()) as session:
+        db_interview = session.get(Interview, interview_id)
+        if db_interview:
+            db_interview.status = "processing"
+            session.add(db_interview)
+            session.commit()
+
+    enqueued = await runner.enqueue(run_id, from_stage=from_stage)
+    if not enqueued:
+        # is_active 检查和 enqueue 之间有竞态，这里兜底
+        raise HTTPException(status_code=409, detail="流水线刚刚开始运行，请稍后再试")
+
     logger.info("已启动流水线：interview=%s run=%s from_stage=%s", interview_id, run_id, from_stage)
 
     return {"run_id": run_id, "from_stage": from_stage}

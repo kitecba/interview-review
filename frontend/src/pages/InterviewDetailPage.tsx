@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, ApiError } from '../api/client'
+import type { ManualRole } from '../api/types'
 import { useApi, usePolling } from '../hooks/useApi'
 import { Badge } from '../components/Badge'
 import { ProgressBar } from '../components/ProgressBar'
@@ -49,6 +50,8 @@ export function InterviewDetailPage() {
   const [tab, setTab] = useState<'stages' | 'transcript'>('stages')
   const [retryingStage, setRetryingStage] = useState<string | null>(null)
   const [retryError, setRetryError] = useState<string | null>(null)
+  const [changingRole, setChangingRole] = useState(false)
+  const [roleError, setRoleError] = useState<string | null>(null)
 
   const detail = useApi(() => api.getInterview(id), [id])
   const transcript = useApi(
@@ -82,6 +85,34 @@ export function InterviewDetailPage() {
       setRetryError(err instanceof ApiError ? err.message : '重跑失败')
     } finally {
       setRetryingStage(null)
+    }
+  }
+
+  async function handleRoleChange(speakerRawId: number, role: ManualRole) {
+    const label = role === 'interviewer' ? '面试官' : role === 'candidate' ? '候选人' : '自动判定'
+    const costHint =
+      role === 'auto'
+        ? '将重新运行角色判定及其后的全部阶段（DeepSeek 调用，约 ¥0.55）。'
+        : '改判后将自动重跑切分、评分与汇总（DeepSeek 调用，约 ¥0.5）。'
+    if (
+      !window.confirm(
+        `将说话人 ${speakerRawId} 改判为「${label}」。\n\n${costHint}\n\n确定吗？`,
+      )
+    ) {
+      return
+    }
+
+    setChangingRole(true)
+    setRoleError(null)
+    try {
+      await api.updateSpeakerMapping(id, [{ speaker_raw_id: speakerRawId, role }])
+      // 重跑会话面试状态置为 processing，轮询随之恢复；
+      // transcript 的刷新由其依赖（interview.status）变化触发
+      detail.reload()
+    } catch (err) {
+      setRoleError(err instanceof ApiError ? err.message : '改判失败')
+    } finally {
+      setChangingRole(false)
     }
   }
 
@@ -208,6 +239,10 @@ export function InterviewDetailPage() {
         <ErrorState title="重跑失败" message={retryError} onRetry={() => setRetryError(null)} retryLabel="知道了" />
       )}
 
+      {roleError && (
+        <ErrorState title="改判失败" message={roleError} onRetry={() => setRoleError(null)} retryLabel="知道了" />
+      )}
+
       {/* 标签页 */}
       <div className="flex items-center gap-1 border-b border-rule">
         <TabButton active={tab === 'stages'} onClick={() => setTab('stages')}>
@@ -274,6 +309,8 @@ export function InterviewDetailPage() {
             <TranscriptView
               speakers={transcript.data?.speakers ?? []}
               segments={transcript.data?.segments ?? []}
+              onChangeRole={handleRoleChange}
+              changingRole={changingRole}
             />
           )}
         </section>

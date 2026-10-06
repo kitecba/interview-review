@@ -75,7 +75,7 @@ export interface InterviewDetail {
 }
 
 export interface Speaker {
-  speaker_raw_id: string
+  speaker_raw_id: number
   role: SpeakerRole
   confidence: number
   evidence: string | null
@@ -84,7 +84,7 @@ export interface Speaker {
 
 export interface Segment {
   seq: number
-  speaker_raw_id: string
+  speaker_raw_id: number
   start_ms: number
   end_ms: number
   text: string
@@ -94,6 +94,22 @@ export interface Segment {
 export interface TranscriptResponse {
   speakers: Speaker[]
   segments: Segment[]
+}
+
+// ---- 说话人改判 ----
+
+/** "auto" 表示撤销人工改判、恢复自动判定 */
+export type ManualRole = 'interviewer' | 'candidate' | 'auto'
+
+export interface SpeakerMappingUpdateItem {
+  speaker_raw_id: number
+  role: ManualRole
+}
+
+export interface SpeakerMappingResponse {
+  run_id: string
+  from_stage: string
+  mappings: Speaker[]
 }
 
 // ---- 报告 ----

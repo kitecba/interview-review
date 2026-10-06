@@ -7,6 +7,8 @@ import type {
   InterviewListItem,
   ReportResponse,
   Run,
+  SpeakerMappingResponse,
+  SpeakerMappingUpdateItem,
   TranscriptResponse,
 } from './types'
 
@@ -118,6 +120,20 @@ export const api = {
   getTranscript(id: string): Promise<TranscriptResponse> {
     return request<TranscriptResponse>(
       `/interviews/${encodeURIComponent(id)}/transcript`,
+    )
+  },
+
+  updateSpeakerMapping(
+    id: string,
+    mappings: SpeakerMappingUpdateItem[],
+  ): Promise<SpeakerMappingResponse> {
+    return request<SpeakerMappingResponse>(
+      `/interviews/${encodeURIComponent(id)}/speaker-mapping`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mappings }),
+      },
     )
   },
 
