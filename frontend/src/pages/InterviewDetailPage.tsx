@@ -90,13 +90,9 @@ export function InterviewDetailPage() {
 
   async function handleRoleChange(speakerRawId: number, role: ManualRole) {
     const label = role === 'interviewer' ? '面试官' : role === 'candidate' ? '候选人' : '自动判定'
-    const costHint =
-      role === 'auto'
-        ? '将重新运行角色判定及其后的全部阶段（DeepSeek 调用，约 ¥0.55）。'
-        : '改判后将自动重跑切分、评分与汇总（DeepSeek 调用，约 ¥0.5）。'
     if (
       !window.confirm(
-        `将说话人 ${speakerRawId} 改判为「${label}」。\n\n${costHint}\n\n确定吗？`,
+        `将说话人 ${speakerRawId} 改判为「${label}」。\n\n改判后会自动重跑切分、评分与汇总。确定吗？`,
       )
     ) {
       return
