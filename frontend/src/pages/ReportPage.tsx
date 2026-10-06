@@ -31,7 +31,6 @@ function BackLink() {
 export function ReportPage() {
   const { id = '' } = useParams()
   const report = useApi(() => api.getReport(id), [id])
-  const cost = useApi(() => api.getCost(id), [id])
 
   if (report.loading && !report.data) {
     return <LoadingState label="正在加载复盘报告…" />
@@ -113,12 +112,6 @@ export function ReportPage() {
             <div className="mono mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-faint">
               {data?.report?.version != null && (
                 <span className="tnum">报告版本 v{data.report.version}</span>
-              )}
-              {data?.report?.model && <span>模型 {data.report.model}</span>}
-              {cost.data && (
-                <span className="tnum">
-                  本次成本 ￥{cost.data.total_cost_cny?.toFixed(2)}
-                </span>
               )}
             </div>
           </div>
