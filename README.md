@@ -79,6 +79,12 @@ cd frontend && npm run dev
 > **后端必须 `--workers 1`**。流水线的任务队列和 SSE 进度推送都是进程内状态，
 > 多 worker 会出现「任务在 A 进程跑、前端连到 B 进程订阅进度」而永远收不到消息。
 
+### 部署到云服务器
+
+支持 Docker 单容器部署（前端由后端同源托管，无需 Nginx）。完整步骤见
+[docs/deploy.md](docs/deploy.md)。**公网部署必须在 `.env` 里设置
+`APP_ACCESS_CODE` 访问口令**，否则 API 处于无鉴权状态。
+
 ## 目录结构
 
 ```

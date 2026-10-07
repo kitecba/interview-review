@@ -1,0 +1,23 @@
+services:
+  app:
+    build: .
+    image: interview-review
+    container_name: interview-review
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # 容器内固定路径；DATA_DIR 在 .env 里的值会被这里覆盖
+      DATA_DIR: /data
+      STATIC_DIR: /app/static
+    volumes:
+      # SQLite 数据库和上传的音频都在这里。备份 = 备份这个目录。
+      - ./data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s

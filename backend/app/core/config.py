@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     ffprobe_path: str = ""
     data_dir: str = "backend/data"
 
+    # ---------- 访问口令（部署上线用） ----------
+    # 留空 = 不启用鉴权（本地开发）。
+    # 部署到公网时**必须**设置：所有 /api 请求（健康检查除外）需要带上它，
+    # 否则任何拿到地址的人都能消耗你的 DeepSeek / 百炼 / OSS 额度。
+    app_access_code: str = ""
+
     # ---------- 派生路径 ----------
     @property
     def data_path(self) -> Path:

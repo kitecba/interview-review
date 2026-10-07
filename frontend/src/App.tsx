@@ -1,4 +1,5 @@
 import { Link, Route, Routes } from 'react-router-dom'
+import { AccessGate } from './components/AccessGate'
 import { Layout } from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { InterviewListPage } from './pages/InterviewListPage'
@@ -23,6 +24,7 @@ function NotFoundPage() {
 function App() {
   return (
     <ErrorBoundary>
+      <AccessGate />
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<InterviewListPage />} />

@@ -1,0 +1,34 @@
+# 构建上下文越小越好，且绝不能把密钥和数据烘进镜像
+.git
+.github
+.claude
+.githooks
+.idea
+
+# 密钥与数据 —— 只通过环境变量 / 挂载卷进容器
+.env
+backend/data/
+
+# Python
+backend/.venv/
+**/__pycache__/
+**/*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+*.local
+
+# 文档与截图
+*.png
+*.jpg
+docs/
+
+# 本地杂项
+*.db
+*.db-wal
+*.db-shm
+samples/

@@ -31,6 +31,21 @@ export class ApiError extends Error {
   get isNetwork(): boolean {
     return this.status === 0
   }
+
+  get isUnauthorized(): boolean {
+    return this.status === 401
+  }
+}
+
+const TOKEN_KEY = 'interview-review-access-token'
+
+export function getAccessToken(): string {
+  return localStorage.getItem(TOKEN_KEY) ?? ''
+}
+
+export function setAccessToken(code: string): void {
+  if (code) localStorage.setItem(TOKEN_KEY, code)
+  else localStorage.removeItem(TOKEN_KEY)
 }
 
 function extractDetail(data: unknown): string | null {
@@ -44,11 +59,15 @@ function extractDetail(data: unknown): string | null {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers)
+  const token = getAccessToken()
+  if (token) headers.set('X-Access-Token', token)
+
   let res: Response
   try {
-    res = await fetch(`/api${path}`, init)
+    res = await fetch(`/api${path}`, { ...init, headers })
   } catch {
-    throw new ApiError(0, '无法连接到后端服务，请确认后端已在 127.0.0.1:8000 启动。')
+    throw new ApiError(0, '无法连接到后端服务，请确认后端已启动。')
   }
 
   if (!res.ok) {
@@ -66,6 +85,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       // ignore body parse errors
     }
     const detail = extractDetail(payload)
+
+    // 口令缺失或错误：通知全局的 AccessGate 弹出输入框。
+    // 排除 /health —— 页脚的健康指示不该触发弹框。
+    if (res.status === 401 && !path.startsWith('/health')) {
+      window.dispatchEvent(new CustomEvent('auth:required'))
+    }
+
     throw new ApiError(res.status, detail ?? `请求失败（HTTP ${res.status}）`, payload)
   }
 
