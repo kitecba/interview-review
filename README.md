@@ -125,5 +125,6 @@ python scripts/show_report.py --cost            # 各阶段的大模型成本
 ## 隐私说明
 
 - 面试录音属于隐私，`.gitignore` 已排除所有音频格式，不要提交进版本库。
+- `docs/probes.md`（实测记录）引用了真实面试的转写摘录，同样只存本地、不入库。
 - 密钥一律走 `.env`（已忽略），代码里不出现任何明文凭据。
 - `.githooks/pre-commit` 会在提交前扫描疑似密钥并拦截。启用方式见 `docs/design.md`。
