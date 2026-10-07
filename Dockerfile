@@ -6,6 +6,8 @@ FROM node:22-alpine AS frontend-build
 
 WORKDIR /build
 COPY frontend/package.json frontend/package-lock.json ./
+# 国内服务器构建提速：npm 走淘宝镜像（海外构建可删这一行）
+RUN npm config set registry https://registry.npmmirror.com
 # 先装依赖再拷源码，利用 Docker 层缓存 —— 改业务代码时不用重装依赖
 RUN npm ci
 COPY frontend/ ./
@@ -16,9 +18,11 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# imageio-ffmpeg 自带 ffmpeg 二进制，不需要 apt 装
+# imageio-ffmpeg 自带 ffmpeg 二进制，不需要 apt 装。
+# 国内服务器构建提速：pip 走阿里云镜像（海外构建可删 -i 参数，直连官方源）
 COPY backend/requirements.txt ./backend/
-RUN pip install --no-cache-dir -r backend/requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt \
+    -i https://mirrors.aliyun.com/pypi/simple/
 
 COPY backend/app ./backend/app
 COPY --from=frontend-build /build/dist ./static
