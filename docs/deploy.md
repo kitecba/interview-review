@@ -5,11 +5,13 @@
 ## 部署形态
 
 ```
-浏览器 ──> http://服务器IP:8000
+浏览器 ──> http://服务器IP（80 端口）
               │
-         Docker 容器（单容器）
+         Nginx 容器（反向代理：大文件上传限制、超时、gzip、HTTPS 入口）
+              │
+         FastAPI 容器（内部网络 :8000，不对外）
          ├─ uvicorn --workers 1
-         ├─ FastAPI：/api + 托管前端静态文件（同源，无跨域）
+         ├─ /api + 托管前端静态文件（同源，无跨域）
          ├─ SQLite + 上传音频 → 挂载卷 ./data
          └─ ffmpeg（imageio-ffmpeg 自带，无需另装）
               │
@@ -18,13 +20,14 @@
               └─ 阿里云 OSS（音频中转）
 ```
 
-配置要求：1 核 1G 起步，磁盘 20G+。转写和评分都是调云端 API，
-服务器本机只做 ffmpeg 转码和任务调度。
+两个容器：Nginx 负责对外（大文件上传的体积/超时限制是它存在的最大理由，
+Nginx 默认 1MB 请求体会让录音上传直接 413）；FastAPI 只在内部网络，
+不直接暴露。配置要求：1 核 1G 起步，磁盘 20G+。
 
 ## 首次部署
 
-前提：一台 Ubuntu 云服务器，安全组放行 **8000/TCP**（控制台 → 安全组规则里配，
-只放行 8000，其他一律不开）。
+前提：一台 Ubuntu 云服务器，安全组放行 **80/TCP**（控制台 → 安全组规则里配，
+只放行 80，其他一律不开；8000 由 Nginx 内部转发，**不要**对外）。
 
 ### 1. 装 Docker
 
@@ -70,15 +73,21 @@ docker compose up -d --build
 curl http://127.0.0.1:8000/api/health
 ```
 
-返回 `"ready":true` 后，浏览器打开 `http://服务器IP:8000`：
+返回 `"ready":true` 后，浏览器打开 `http://服务器IP`（80 端口，不用加端口号）：
 会弹出访问口令输入框，填 `APP_ACCESS_CODE` 的值即可进入。
 
 ### 6. 排查
 
 ```bash
-docker compose logs -f app      # 看日志（启动日志里会明确列出缺哪个配置）
-docker compose ps               # 看容器是否在重启循环
+docker compose logs -f app       # 后端日志（启动日志里会明确列出缺哪个配置）
+docker compose logs -f nginx     # Nginx 日志（502/413 先看这里）
+docker compose ps                # 容器是否在重启循环
 ```
+
+常见问题：
+- **上传返回 413** —— `nginx/default.conf` 里 `client_max_body_size` 不够大
+- **打开是 502** —— 后端容器没起来，先看 app 日志
+- **改了 Nginx 配置** —— `docker compose restart nginx` 生效
 
 ## 日常使用
 
@@ -99,9 +108,10 @@ git pull && docker compose up -d --build
 
 ## 局限与后续
 
-- **HTTP 明文**：口令和录音内容都是明文传输。个人工具短期可以接受；
-  要上 HTTPS 需要一个域名（备案）+ 反向代理（推荐 Caddy，两行配置自动签证书）。
+- **HTTP 明文**：口令和录音内容都是明文传输。要上 HTTPS 需要一个域名（备案）：
+  域名解析到服务器，证书放到 `./nginx/certs/`，按 `nginx/default.conf` 里的
+  注释启用 443 块并重启。证书用 Let's Encrypt 免费签（certbot 一条命令）。
 - **单实例**：任务队列是进程内状态，容器里固定 `--workers 1`，多副本会坏。
 - **容器重建不丢数据**：SQLite 在挂载卷 `./data` 里；但**别删这个目录**。
 - **国内服务器**：拉 GitHub 可能需要代理；也可以本地 `docker save` 打包镜像
-  传上去 `docker load`（`docker save interview-review -o image.tar`）。
+  传上去 `docker load`（app 和 nginx 两个镜像都要）。
