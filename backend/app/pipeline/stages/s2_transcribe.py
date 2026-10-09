@@ -86,14 +86,49 @@ class TranscribeStage(Stage):
             raise StageError(str(exc)) from exc
 
         # ------------------------------------------------------------------
-        # 第一步：拿到 task_id（复用已有的，或新提交一个）
+        # 第一步：决定复用历史任务还是提交新任务。
+        #
+        # 历史任务分三种情况（先查一次状态再决定，不能无脑续轮询）：
+        #   进行中   → 继续轮询
+        #   已成功   → 直接取结果（上次可能在拉取结果时崩溃，结果还没落库）
+        #   已失败   → 重新提交。失败的任务永远不会自己变好，而失败任务
+        #              没有转写产出、不产生费用，重新提交不存在重复计费；
+        #              反之如果无脑续轮询，就会卡死在死任务上（真实发生过：
+        #              OSS 防盗链把百炼的下载拒了，任务 FAILED 后重跑
+        #              永远在轮询同一个死任务）。
         # ------------------------------------------------------------------
         task_id = existing_task_id
+        task: dict[str, Any] | None = None
 
         if task_id:
-            logger.info("复用已存在的转写任务，继续轮询：task_id=%s", task_id)
-            ctx.emit("继续等待上次的转写任务…", 25)
-        else:
+            try:
+                probe = await client.poll_once(task_id)
+                status = (probe.get("output") or {}).get("task_status") or "PENDING"
+            except AsrError as exc:
+                if "HTTP 404" in str(exc):
+                    # 任务可能超过百炼的保留期被清理，同样需要重新提交
+                    logger.warning("历史转写任务已不存在（404），将重新提交：%s", task_id)
+                    task_id = None
+                    status = None
+                else:
+                    # 查询失败按进行中处理，交给下面的轮询重试
+                    logger.warning("查询历史转写任务状态失败，按进行中处理：%s", exc)
+                    status = "PENDING"
+
+            if status == "SUCCEEDED":
+                task = probe
+                ctx.emit("历史转写已完成，正在取回结果…", 55)
+                logger.info("历史转写任务已完成，直接取回结果：%s", task_id)
+            elif status in ("FAILED", "CANCELED", "UNKNOWN"):
+                logger.warning(
+                    "历史转写任务已失败（%s），重新提交：%s", status, task_id
+                )
+                task_id = None
+            elif status is not None:
+                logger.info("复用已存在的转写任务，继续轮询：task_id=%s", task_id)
+                ctx.emit("继续等待上次的转写任务…", 25)
+
+        if task is None and task_id is None:
             ctx.emit("正在生成音频访问链接…", 22)
             try:
                 file_url = await storage_oss.signed_url(oss_key)
@@ -115,17 +150,21 @@ class TranscribeStage(Stage):
             logger.info("转写任务已提交并落库：task_id=%s", task_id)
 
         # ------------------------------------------------------------------
-        # 第二步：轮询。失败只重轮询，绝不重新提交。
+        # 第二步：轮询（仅当还没拿到已完成的结果时）。
+        # 进行中的任务失败只重轮询，绝不重新提交。
         # ------------------------------------------------------------------
-        def on_tick(status: str, waited: int) -> None:
-            ctx.emit(f"转写中…（已等待 {waited} 秒，状态 {status}）", 30)
+        if task is None:
+            def on_tick(status: str, waited: int) -> None:
+                ctx.emit(f"转写中…（已等待 {waited} 秒，状态 {status}）", 30)
 
-        try:
-            task = await client.poll_until_done(task_id, duration_ms=duration_ms, on_tick=on_tick)
-        except AsrTimeoutError as exc:
-            raise StageError(str(exc), retryable=True) from exc
-        except AsrError as exc:
-            raise StageError(str(exc), retryable=exc.retryable) from exc
+            try:
+                task = await client.poll_until_done(
+                    task_id, duration_ms=duration_ms, on_tick=on_tick
+                )
+            except AsrTimeoutError as exc:
+                raise StageError(str(exc), retryable=True) from exc
+            except AsrError as exc:
+                raise StageError(str(exc), retryable=exc.retryable) from exc
 
         if ctx.is_canceled():
             # 注意：任务已经提交并计费了。取消只影响本地处理，钱已经花了，
